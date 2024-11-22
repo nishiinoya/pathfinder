@@ -23,17 +23,25 @@ void print_graph(Graph *graph) {
 
 // Helper function to find the index of an island, or add it if not present
 int get_island_index(Graph *graph, const char *island_name, int *island_count) {
+    // Prevent adding more islands than allowed
+    if (*island_count > graph->num_islands) {
+        return -1;
+    }
+
+    // Check if the island already exists
     for (int i = 0; i < *island_count; i++) {
         if (mx_strcmp(graph->islands[i], island_name) == 0) {
             return i;
         }
     }
-    // If the island is not found, add it
+
+    // Add the island
     graph->islands[*island_count] = mx_strdup(island_name);
-    return (*island_count)++;
+    int index = (*island_count)++;
+    return index;
 }
 
-// Function to free graph memory in case of an error
+// Function to free graph memory
 void free_graph(Graph *graph) {
     if (graph) {
         for (int i = 0; i < graph->num_islands; i++) {
@@ -51,7 +59,6 @@ Graph *parse_input(char *file_content) {
     if (num_islands == -1) {
         return NULL;
     }
-
 
     // Create and initialize the graph
     Graph *graph = malloc(sizeof(Graph));
@@ -79,10 +86,12 @@ Graph *parse_input(char *file_content) {
         char *line = lines[i];
         char island1[64], island2[64];
         int length;
+
         // Debugging
         // printf("Debug: num_islands = %d\n", num_islands);
         // printf("Debug: line_num = %d\n", line_num);
         // printf("Debug: Parsing line: %s\n", lines[i]);
+        
         if (island_count > num_islands) {
             return handle_invalid_island_count(graph, lines);
         }
@@ -108,7 +117,10 @@ Graph *parse_input(char *file_content) {
         // Get or add islands
         int index1 = get_island_index(graph, island1, &island_count);
         int index2 = get_island_index(graph, island2, &island_count);
-
+        if (index1 == -1 || index2 == -1) {
+            handle_invalid_island_count(graph, lines);
+            return NULL;
+        }
         // Check if the same island is connected to itself
         if (validate_different_islands(index1, index2, line_num, graph, lines) == -1)
             return NULL;
@@ -127,7 +139,6 @@ Graph *parse_input(char *file_content) {
         // Validate number of unique islands dynamically
         line_num++;
     }
-
 
     // Validate the number of unique islands
     if (island_count != num_islands) {

@@ -2,9 +2,9 @@
 
 void print_route(int *route, int route_length, Graph *graph) {
     for (int i = 0; i < route_length; i++) {
-        printf("%s", graph->islands[route[i]]);
+        mx_printstr(graph->islands[route[i]]);
         if (i < route_length - 1) {
-            printf(" -> ");
+            mx_printstr(" -> ");
         }
     }
 }
@@ -14,28 +14,32 @@ void print_distance(int *route, int route_length, Graph *graph) {
     for (int i = 0; i < route_length - 1; i++) {
         int distance = graph->distances[route[i]][route[i + 1]];
         total_distance += distance;
-        printf("%d", distance);
+        mx_printint(distance);
         if (i < route_length - 2) {
-            printf(" + ");
+            mx_printstr(" + ");
         }
     }
     if (route_length - 1 > 1) {
-        printf(" = %d\n", total_distance);
+        mx_printstr(" = ");
+        mx_printint(total_distance);
+        mx_printchar('\n');
     } else {
-        printf("\n");
+        mx_printchar('\n');
     }
 }
-
 void print_path_block(int src, int dest, int *route, int route_length, Graph *graph) {
-    printf("========================================\n");
-    printf("Path: %s -> %s\n", graph->islands[src], graph->islands[dest]);
-    printf("Route: ");
+    mx_printstr("========================================\n");
+    mx_printstr("Path: ");
+    mx_printstr(graph->islands[src]);
+    mx_printstr(" -> ");
+    mx_printstr(graph->islands[dest]);
+    mx_printstr("\nRoute: ");
     print_route(route, route_length, graph);
-    printf("\nDistance: ");
+    mx_printchar('\n');
+    mx_printstr("Distance: ");
     print_distance(route, route_length, graph);
-    printf("========================================\n");
+    mx_printstr("========================================\n");
 }
-
 static int *dequeue_path(int **queue, int *queue_lengths, int *path_length, int *front) {
     int *path = queue[*front];
     *path_length = queue_lengths[*front];
@@ -68,7 +72,6 @@ void find_all_paths(int **prev, int dest, int src, Graph *graph) {
         int current_node = path[path_length - 1];
 
         if (current_node == src) {
-            // Reverse the path to print it from src to dest
             int *reversed_path = (int *)malloc(path_length * sizeof(int));
             for (int i = 0; i < path_length; i++) {
                 reversed_path[i] = path[path_length - i - 1];
@@ -78,7 +81,6 @@ void find_all_paths(int **prev, int dest, int src, Graph *graph) {
         } else {
             for (int i = 0; prev[current_node][i] != -1; i++) {
                 int predecessor = prev[current_node][i];
-                // Avoid cycles by checking if predecessor is already in path
                 bool in_path = false;
                 for (int j = 0; j < path_length; j++) {
                     if (path[j] == predecessor) {
