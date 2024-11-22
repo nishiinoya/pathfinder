@@ -47,27 +47,11 @@ void free_graph(Graph *graph) {
 }
 Graph *parse_input(char *file_content) {
     char **lines = mx_strsplit(file_content, '\n');
-    if (!lines || !lines[0]) {
-        mx_printerr("error: line 1 is not valid\n");
-        mx_del_strarr(&lines);
+    int num_islands = check_first_line(lines);
+    if (num_islands == -1) {
         return NULL;
     }
 
-    for (int i = 0; lines[0][i] != '\0'; i++) {
-        if (!mx_isdigit(lines[0][i]) && lines[0][i] != 0) {
-            mx_printerr("error: line 1 is not valid\n");
-            mx_del_strarr(&lines);
-            return NULL;
-        }
-    }
-
-    // Parse the number of islands
-    int num_islands = mx_atoi(lines[0]);
-    if (num_islands <= 1) {
-        mx_printerr("error: line 1 is not valid\n");
-        mx_del_strarr(&lines);
-        return NULL;
-    }
 
     // Create and initialize the graph
     Graph *graph = malloc(sizeof(Graph));
@@ -88,76 +72,66 @@ Graph *parse_input(char *file_content) {
 
     // Parse each bridge definition line
     for (int i = 1; lines[i]; i++) {
+        if (mx_strlen(lines[i]) == 0) {
+            handle_error("error: ", i + 1, graph, lines);
+            return NULL;
+        }
         char *line = lines[i];
         char island1[64], island2[64];
         int length;
+        // Debugging
+        // printf("Debug: num_islands = %d\n", num_islands);
+        // printf("Debug: line_num = %d\n", line_num);
+        // printf("Debug: Parsing line: %s\n", lines[i]);
+        if (island_count > num_islands) {
+            return handle_invalid_island_count(graph, lines);
+        }
+        // Validate line format
+        if (validate_line_format(line, line_num, graph, lines) == -1)
+            return NULL;
 
-        // Parse the line
+        // Parse islands and bridge length
         int dash_idx = mx_get_char_index(line, '-');
         int comma_idx = mx_get_char_index(line, ',');
-        if (dash_idx < 0 || comma_idx < 0 || dash_idx >= comma_idx) {
-            mx_printerr("error: line ");
-            mx_printint(line_num);
-            mx_printerr(" is not valid\n");
-            free_graph(graph);
-            mx_del_strarr(&lines);
-            return NULL;
-        }
-
         mx_strncpy(island1, line, dash_idx);
         island1[dash_idx] = '\0';
         mx_strncpy(island2, line + dash_idx + 1, comma_idx - dash_idx - 1);
         island2[comma_idx - dash_idx - 1] = '\0';
         length = mx_atoi(line + comma_idx + 1);
 
-        if (length <= 0) {
-            mx_printerr("error: line ");
-            mx_printint(line_num);
-            mx_printerr(" is not valid\n");
-            free_graph(graph);
-            mx_del_strarr(&lines);
+        // Validate islands and bridge length
+        if (validate_island_names(island1, island2, line_num, graph, lines) == -1)
             return NULL;
-        }
+        if (validate_bridge_length(length, line_num, graph, lines) == -1)
+            return NULL;
 
         // Get or add islands
         int index1 = get_island_index(graph, island1, &island_count);
         int index2 = get_island_index(graph, island2, &island_count);
 
-        if (index1 == index2) {
-            mx_printerr("error: line ");
-            mx_printint(line_num);
-            mx_printerr(" is not valid (same island)\n");
-            free_graph(graph);
-            mx_del_strarr(&lines);
+        // Check if the same island is connected to itself
+        if (validate_different_islands(index1, index2, line_num, graph, lines) == -1)
             return NULL;
-        }
-        if (graph->distances[index1][index2] != INT_MAX) {
-            mx_printerr("error: duplicate bridges\n");
-            free_graph(graph);
-            mx_del_strarr(&lines);
+
+        // Check for duplicate bridges
+        if (check_duplicate_bridges(graph, index1, index2, lines) == -1)
             return NULL;
-        }
 
         graph->distances[index1][index2] = length;
         graph->distances[index2][index1] = length;
 
+        // Check total bridge length
         total_bridge_length += length;
-        if (total_bridge_length > INT_MAX) {
-            mx_printerr("error: sum of bridges lengths is too big\n");
-            free_graph(graph);
-            mx_del_strarr(&lines);
+        if (check_total_bridge_length(total_bridge_length, graph, lines) == -1)
             return NULL;
-        }
-
+        // Validate number of unique islands dynamically
         line_num++;
     }
 
+
     // Validate the number of unique islands
     if (island_count != num_islands) {
-        mx_printerr("error: invalid number of islands\n");
-        free_graph(graph);
-        mx_del_strarr(&lines);
-        return NULL;
+        return handle_invalid_island_count(graph, lines);
     }
 
     mx_del_strarr(&lines);

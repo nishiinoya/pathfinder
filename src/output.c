@@ -1,7 +1,4 @@
 #include "../inc/pathfinder.h"
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 void print_route(int *route, int route_length, Graph *graph) {
     for (int i = 0; i < route_length; i++) {
@@ -39,14 +36,14 @@ void print_path_block(int src, int dest, int *route, int route_length, Graph *gr
     printf("========================================\n");
 }
 
-int *dequeue_path(int **queue, int *queue_lengths, int *path_length, int *front) {
+static int *dequeue_path(int **queue, int *queue_lengths, int *path_length, int *front) {
     int *path = queue[*front];
     *path_length = queue_lengths[*front];
     (*front)++;
     return path;
 }
 
-void enqueue_path(int **queue, int *queue_lengths, int *path, int path_length, int *rear) {
+static void enqueue_path(int **queue, int *queue_lengths, int *path, int path_length, int *rear) {
     queue[*rear] = (int *)malloc(path_length * sizeof(int));
     for (int i = 0; i < path_length; i++) {
         queue[*rear][i] = path[i];
@@ -110,6 +107,7 @@ void find_all_paths(int **prev, int dest, int src, Graph *graph) {
     free(queue);
     free(queue_lengths);
 }
+
 // Entry point to find paths for all pairs of nodes
 void print_paths(Graph *graph) {
     int num_islands = graph->num_islands;

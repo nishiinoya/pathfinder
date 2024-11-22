@@ -1,7 +1,4 @@
 #include "../inc/pathfinder.h"
-#include <limits.h>
-#include <stdbool.h>
-#include <stdlib.h>
 
 int min_distance(int dist[], bool visited[], int num_islands) {
     int min = INT_MAX, min_index = -1;
