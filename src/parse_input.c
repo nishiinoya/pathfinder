@@ -27,7 +27,6 @@ int get_island_index(Graph *graph, const char *island_name, int *island_count) {
     if (*island_count > graph->num_islands) {
         return -1;
     }
-
     // Check if the island already exists
     for (int i = 0; i < *island_count; i++) {
         if (mx_strcmp(graph->islands[i], island_name) == 0) {
@@ -87,7 +86,8 @@ Graph *parse_input(char *file_content) {
         char island1[64], island2[64];
         int length;
 
-        // Debugging
+        //Debugging
+
         // printf("Debug: num_islands = %d\n", num_islands);
         // printf("Debug: line_num = %d\n", line_num);
         // printf("Debug: Parsing line: %s\n", lines[i]);
@@ -102,6 +102,12 @@ Graph *parse_input(char *file_content) {
         // Parse islands and bridge length
         int dash_idx = mx_get_char_index(line, '-');
         int comma_idx = mx_get_char_index(line, ',');
+        if (dash_idx == comma_idx || dash_idx > comma_idx)
+        {
+            handle_error("error: ", line_num, graph, lines);
+            return NULL;
+        }
+        
         mx_strncpy(island1, line, dash_idx);
         island1[dash_idx] = '\0';
         mx_strncpy(island2, line + dash_idx + 1, comma_idx - dash_idx - 1);
