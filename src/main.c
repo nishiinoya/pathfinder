@@ -20,6 +20,5 @@ int main(int argc, char *argv[]) {
     free_graph(graph);
     free(file_content);
     close(fd);
-
     return 0;
 }

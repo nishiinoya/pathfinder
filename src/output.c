@@ -101,8 +101,6 @@ void find_all_paths(int **prev, int dest, int src, Graph *graph) {
         }
         free(path);
     }
-
-    // Free queue memory
     for (int i = front; i < rear; i++) {
         free(queue[i]);
     }

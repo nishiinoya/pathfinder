@@ -1,27 +1,5 @@
 #include "../inc/pathfinder.h"
 
-void print_graph(Graph *graph) {
-    mx_printstr("Number of islands: ");
-    mx_printint(graph->num_islands);
-    mx_printstr("\nIslands and their connections:\n");
-
-    for (int i = 0; i < graph->num_islands; i++) {
-        mx_printstr("Island: ");
-        mx_printstr(graph->islands[i]);
-        mx_printstr("\n");
-        for (int j = 0; j < graph->num_islands; j++) {
-            if (graph->distances[i][j] != INT_MAX && i != j) {
-                mx_printstr("  -> ");
-                mx_printstr(graph->islands[j]);
-                mx_printstr(": ");
-                mx_printint(graph->distances[i][j]);
-                mx_printstr("\n");
-            }
-        }
-    }
-}
-
-// Helper function to find the index of an island, or add it if not present
 int get_island_index(Graph *graph, const char *island_name, int *island_count) {
     // Prevent adding more islands than allowed
     if (*island_count > graph->num_islands) {
@@ -58,7 +36,6 @@ Graph *parse_input(char *file_content) {
     if (num_islands == -1) {
         return NULL;
     }
-
     // Create and initialize the graph
     Graph *graph = malloc(sizeof(Graph));
     graph->num_islands = num_islands;
@@ -79,7 +56,7 @@ Graph *parse_input(char *file_content) {
     // Parse each bridge definition line
     for (int i = 1; lines[i]; i++) {
         if (mx_strlen(lines[i]) == 0) {
-            handle_error("error: ", i + 1, graph, lines);
+            handle_error("error: ", i , graph, lines);
             return NULL;
         }
         char *line = lines[i];
@@ -95,14 +72,13 @@ Graph *parse_input(char *file_content) {
         if (island_count > num_islands) {
             return handle_invalid_island_count(graph, lines);
         }
-        // Validate line format
-        if (validate_line_format(line, line_num, graph, lines) == -1)
-            return NULL;
 
         // Parse islands and bridge length
         int dash_idx = mx_get_char_index(line, '-');
         int comma_idx = mx_get_char_index(line, ',');
-        if (dash_idx == comma_idx || dash_idx > comma_idx)
+
+        // Check dash and coma positions
+        if (dash_idx == comma_idx || dash_idx >= comma_idx ||  ((dash_idx + 1) == comma_idx))
         {
             handle_error("error: ", line_num, graph, lines);
             return NULL;
@@ -113,6 +89,12 @@ Graph *parse_input(char *file_content) {
         mx_strncpy(island2, line + dash_idx + 1, comma_idx - dash_idx - 1);
         island2[comma_idx - dash_idx - 1] = '\0';
         length = mx_atoi(line + comma_idx + 1);
+
+        // Check for empty islands
+        if (island1[0] == '\0' || island2[0] == '\0') {
+            handle_error("error: ", line_num, graph, lines);
+            return NULL;
+        }
 
         // Validate islands and bridge length
         if (validate_island_names(island1, island2, line_num, graph, lines) == -1)
@@ -142,7 +124,6 @@ Graph *parse_input(char *file_content) {
         total_bridge_length += length;
         if (check_total_bridge_length(total_bridge_length, graph, lines) == -1)
             return NULL;
-        // Validate number of unique islands dynamically
         line_num++;
     }
 

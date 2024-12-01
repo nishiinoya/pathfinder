@@ -67,15 +67,7 @@ void handle_error(char *message, int line_num, Graph *graph, char **lines) {
     if (lines)
         mx_del_strarr(&lines);
 }
-int validate_line_format(char *line, int line_num, Graph *graph, char **lines) {
-    int dash_idx = mx_get_char_index(line, '-');
-    int comma_idx = mx_get_char_index(line, ',');
-    if (dash_idx < 0 || comma_idx < 0 || dash_idx >= comma_idx) {
-        handle_error("error: ", line_num, graph, lines);
-        return -1;
-    }
-    return 0;
-}
+
 int validate_island_names(char *island1, char *island2, int line_num, Graph *graph, char **lines) {
     for (int i = 0; island1[i] != '\0'; i++) {
         if (!mx_isalpha(island1[i])) {
@@ -114,11 +106,7 @@ int check_total_bridge_length(long long total_length, Graph *graph, char **lines
 }
 int validate_different_islands(int index1, int index2, int line_num, Graph *graph, char **lines) {
     if (index1 == index2) {
-        mx_printerr("error: line ");
-        mx_printint(line_num);
-        mx_printerr(" is not valid\n");
-        free_graph(graph);
-        mx_del_strarr(&lines);
+        handle_error("error: ", line_num, graph, lines);
         return -1;
     }
     return 0;

@@ -29,12 +29,12 @@ $(OBJ):
 
 clean:
 	@$(MAKE) -C $(LIB) clean
-	rm -rf $(OBJ)
+	rm -rf $(OBJ) $(NAME)
 	rm -f $(LIBMX)
 
 uninstall:
 	@$(MAKE) -C $(LIB) uninstall
-	rm -f $(NAME)
+	rm -f $(NAME) 
 
 reinstall: uninstall all
 

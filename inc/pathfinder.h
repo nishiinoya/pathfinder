@@ -24,7 +24,6 @@ void check_args(int argc);
 void check_file(int fd, const char *filename);
 void check_read_file(int reading, int fd, const char *filename);
 int check_first_line(char **lines);
-int validate_line_format(char *line, int line_num, Graph *graph, char **lines);
 int validate_island_names(char *island1, char *island2, int line_num, Graph *graph, char **lines);
 int validate_bridge_length(int length, int line_num, Graph *graph, char **lines);
 int validate_different_islands(int index1, int index2, int line_num, Graph *graph, char **lines);
