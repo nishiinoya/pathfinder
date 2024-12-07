@@ -2,7 +2,7 @@
 
 int main(int argc, char *argv[]) {
     check_args(argc);
-    const char *filename = argv[1];
+    char *filename = argv[1];
     char *buf = mx_strnew(1);
     int fd = open(filename, O_RDONLY);
     check_file(fd, filename);
@@ -20,5 +20,6 @@ int main(int argc, char *argv[]) {
     free_graph(graph);
     free(file_content);
     close(fd);
+    free(buf);
     return 0;
 }

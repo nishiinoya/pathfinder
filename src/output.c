@@ -1,5 +1,30 @@
 #include "../inc/pathfinder.h"
 
+void sort(int** a, int* l, int n){
+    if(n<=1)return;
+    for(int i=0;i<n-1;i++){
+        bool correct_order = 1;
+        for(int j=0;j<l[i]||j<l[i+1];j++){
+            if(a[i][j]>a[i+1][j]) {
+                correct_order = 0;
+                break;
+            }else if(a[i][j]<a[i+1][j]){
+                break;
+            }
+        }
+        //swap
+        if(!correct_order){
+            int* a_ = a[i];
+            a[i] = a[i+1];
+            a[i+1] = a_;
+            int l_ = l[i];
+            l[i] = l[i+1];
+            l[i+1] = l_;
+        }
+    }
+    sort(a,l,n-1);
+}
+
 void print_route(int *route, int route_length, Graph *graph) {
     for (int i = 0; i < route_length; i++) {
         mx_printstr(graph->islands[route[i]]);
@@ -66,6 +91,11 @@ void find_all_paths(int **prev, int dest, int src, Graph *graph) {
     enqueue_path(queue, queue_lengths, initial_path, 1, &rear);
     free(initial_path);
 
+    // storing all valid paths
+    int** all_valid_paths = (int **) malloc(10000*sizeof(int*));
+    int* all_valid_paths_lengths = (int*) malloc(10000*sizeof(int));
+    int all_valid_paths_cnt = 0;
+
     while (front < rear) {
         int path_length;
         int *path = dequeue_path(queue, queue_lengths, &path_length, &front);
@@ -76,8 +106,16 @@ void find_all_paths(int **prev, int dest, int src, Graph *graph) {
             for (int i = 0; i < path_length; i++) {
                 reversed_path[i] = path[path_length - i - 1];
             }
-            print_path_block(reversed_path[0], reversed_path[path_length - 1], reversed_path, path_length, graph);
-            free(reversed_path);
+
+            // instead I want to save it to sort
+            {
+                all_valid_paths[all_valid_paths_cnt]=reversed_path;
+                all_valid_paths_lengths[all_valid_paths_cnt]=path_length;
+                all_valid_paths_cnt++;
+//                print_path_block(reversed_path[0], reversed_path[path_length - 1], reversed_path, path_length, graph);
+            }
+
+//            free(reversed_path);
         } else {
             for (int i = 0; prev[current_node][i] != -1; i++) {
                 int predecessor = prev[current_node][i];
@@ -101,6 +139,25 @@ void find_all_paths(int **prev, int dest, int src, Graph *graph) {
         }
         free(path);
     }
+
+    // sort the paths
+    {
+        sort(all_valid_paths,all_valid_paths_lengths,all_valid_paths_cnt);
+    }
+    // supposed to output here
+    {
+        for(int i=0;i<all_valid_paths_cnt;i++){
+            print_path_block(all_valid_paths[i][0], all_valid_paths[i][all_valid_paths_lengths[i] - 1],
+                             all_valid_paths[i], all_valid_paths_lengths[i], graph);
+        }
+    }
+
+    for(int i=0;i<all_valid_paths_cnt;i++){
+        free(all_valid_paths[i]);
+    }
+    free(all_valid_paths);
+    free(all_valid_paths_lengths);
+
     for (int i = front; i < rear; i++) {
         free(queue[i]);
     }
@@ -112,12 +169,15 @@ void find_all_paths(int **prev, int dest, int src, Graph *graph) {
 void print_paths(Graph *graph) {
     int num_islands = graph->num_islands;
     int *dist = (int *)malloc(num_islands * sizeof(int));
+
+    // prev[i] - array of best predecessors for a vertex
     int **prev = (int **)malloc(num_islands * sizeof(int *));
     for (int i = 0; i < num_islands; i++) {
         prev[i] = (int *)malloc(num_islands * sizeof(int));
     }
 
     for (int src = 0; src < num_islands; src++) {
+        // to check which nodes can be reached from <src>
         dijkstra_for_island(graph, src, dist, prev);
 
         for (int dest = src + 1; dest < graph->num_islands; dest++) {
