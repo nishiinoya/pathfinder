@@ -65,6 +65,26 @@ void print_path_block(int src, int dest, int *route, int route_length, Graph *gr
     print_distance(route, route_length, graph);
     mx_printstr("========================================\n");
 }
+static void resize_queue(int ***queue, int **queue_lengths, int *capacity, int rear) {
+    if (rear >= *capacity) {
+        *capacity *= 10;
+        *queue = (int **)realloc(*queue, (*capacity) * sizeof(int *));
+        *queue_lengths = (int *)realloc(*queue_lengths, (*capacity) * sizeof(int));
+        if (*queue == NULL || *queue_lengths == NULL) {
+            exit(1);
+        }
+    }
+}
+static void resize_valid_paths(int ***paths, int **lengths, int *capacity, int count) {
+    if (count >= *capacity) {
+        *capacity *= 10;
+        *paths = (int **)realloc(*paths, (*capacity) * sizeof(int *));
+        *lengths = (int *)realloc(*lengths, (*capacity) * sizeof(int));
+        if (*paths == NULL || *lengths == NULL) {
+            exit(1);
+        }
+    }
+}
 static int *dequeue_path(int **queue, int *queue_lengths, int *path_length, int *front) {
     int *path = queue[*front];
     *path_length = queue_lengths[*front];
@@ -72,7 +92,8 @@ static int *dequeue_path(int **queue, int *queue_lengths, int *path_length, int 
     return path;
 }
 
-static void enqueue_path(int **queue, int *queue_lengths, int *path, int path_length, int *rear) {
+static void enqueue_path(int **queue, int *queue_lengths, int *path, int path_length, int *rear, int *capacity) {
+    resize_queue(&queue, &queue_lengths, capacity, *rear);
     queue[*rear] = (int *)malloc(path_length * sizeof(int));
     for (int i = 0; i < path_length; i++) {
         queue[*rear][i] = path[i];
@@ -82,18 +103,20 @@ static void enqueue_path(int **queue, int *queue_lengths, int *path, int path_le
 }
 
 void find_all_paths(int **prev, int dest, int src, Graph *graph) {
-    int **queue = (int **)malloc(10000 * sizeof(int *));
-    int *queue_lengths = (int *)malloc(10000 * sizeof(int));
+    int capacity = 10000;
+    int **queue = (int **)malloc(capacity * sizeof(int *));
+    int *queue_lengths = (int *)malloc(capacity * sizeof(int));
     int front = 0, rear = 0;
 
     int *initial_path = (int *)malloc(sizeof(int));
     initial_path[0] = dest;
-    enqueue_path(queue, queue_lengths, initial_path, 1, &rear);
+    enqueue_path(queue, queue_lengths, initial_path, 1, &rear, &capacity);
     free(initial_path);
 
     // storing all valid paths
-    int** all_valid_paths = (int **) malloc(10000*sizeof(int*));
-    int* all_valid_paths_lengths = (int*) malloc(10000*sizeof(int));
+    int all_valid_paths_capacity = 10000;
+    int **all_valid_paths = (int **)malloc(all_valid_paths_capacity * sizeof(int *));
+    int *all_valid_paths_lengths = (int *)malloc(all_valid_paths_capacity * sizeof(int));
     int all_valid_paths_cnt = 0;
 
     while (front < rear) {
@@ -109,8 +132,9 @@ void find_all_paths(int **prev, int dest, int src, Graph *graph) {
 
             // instead I want to save it to sort
             {
-                all_valid_paths[all_valid_paths_cnt]=reversed_path;
-                all_valid_paths_lengths[all_valid_paths_cnt]=path_length;
+                resize_valid_paths(&all_valid_paths, &all_valid_paths_lengths, &all_valid_paths_capacity, all_valid_paths_cnt);
+                all_valid_paths[all_valid_paths_cnt] = reversed_path;
+                all_valid_paths_lengths[all_valid_paths_cnt] = path_length;
                 all_valid_paths_cnt++;
 //                print_path_block(reversed_path[0], reversed_path[path_length - 1], reversed_path, path_length, graph);
             }
@@ -132,7 +156,7 @@ void find_all_paths(int **prev, int dest, int src, Graph *graph) {
                         new_path[j] = path[j];
                     }
                     new_path[path_length] = predecessor;
-                    enqueue_path(queue, queue_lengths, new_path, path_length + 1, &rear);
+                    enqueue_path(queue, queue_lengths, new_path, path_length + 1, &rear, &capacity);
                     free(new_path);
                 }
             }
