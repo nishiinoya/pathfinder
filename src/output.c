@@ -1,28 +1,124 @@
 #include "../inc/pathfinder.h"
 
-void sort(int** a, int* l, int n){
-    if(n<=1)return;
-    for(int i=0;i<n-1;i++){
-        bool correct_order = 1;
-        for(int j=0;j<l[i]||j<l[i+1];j++){
-            if(a[i][j]>a[i+1][j]) {
-                correct_order = 0;
-                break;
-            }else if(a[i][j]<a[i+1][j]){
-                break;
+struct d_arr {
+    int *data;
+    int cap, size;
+};
+struct d_arr2d {
+    struct d_arr **data;
+    int cap, size;
+};
+struct d_arr *new_d_arr(int n) {
+    struct d_arr *ans = (struct d_arr *)malloc(sizeof(struct d_arr));
+    ans->data = (int *)malloc(n * sizeof(int));
+    ans->cap = n;
+    ans->size = 0;
+    return ans;
+}
+void custom_free(struct d_arr *x) {
+    //    printf("freeing     ");
+    free(x->data);
+    free(x);
+    //    printf("finished");
+}
+struct d_arr2d *new_d_arr2d(int n) {
+    struct d_arr2d *ans = (struct d_arr2d *)malloc(sizeof(struct d_arr2d));
+    ans->data = (struct d_arr **)malloc(n * sizeof(struct d_arr *));
+    ans->cap = n;
+    ans->size = 0;
+    return ans;
+}
+void custom_free2d(struct d_arr2d *x) {
+    //    printf("freeing 2d   ");
+    for (int i = 0; i < x->size; i++) {
+        custom_free(x->data[i]);
+    }
+    free(x->data);
+    free(x);
+    //    printf("finished\n");
+}
+
+void add_el(struct d_arr *a, int x) {
+    //    printf("add    ");
+    if (a->size >= a->cap) {
+        a->cap *= 2;
+        int *new_data = (int *)malloc(a->cap * sizeof(int));
+        for (int i = 0; i < a->size; i++) {
+            new_data[i] = a->data[i];
+        }
+        free(a->data);
+        a->data = new_data;
+    }
+    a->data[a->size++] = x;
+    //    printf("finished\n");
+}
+
+void add_el2d(struct d_arr2d *a, struct d_arr *x) {
+    //    printf("add 2d ");
+    //    if(a->size==1) {
+    //        printf("-----adding second-----\n");
+    //        printf("x: %d / %d\n", x->size, x->cap);
+    //        for(int i=0;i<x->size;i++){
+    //            printf("%d ", x->data[i]);
+    //        }
+    //        printf("\n");
+    //    }
+    if (a->size >= a->cap) {
+        a->cap *= 2;
+        struct d_arr **new_data = (struct d_arr **)malloc(a->cap * sizeof(struct d_arr *));
+        for (int i = 0; i < a->size; i++) {
+            new_data[i] = a->data[i];
+        }
+        free(a->data);
+        a->data = new_data;
+    }
+    a->data[a->size++] = x;
+    //    if(a->size==2) {
+    //        for(int i=0;i<a->data[1]->size;i++){
+    //            printf("%d ", a->data[1]->data[i]);
+    //        }
+    //        printf("\n");
+    //
+    //        printf("-----finished-----\n");
+    //    }
+}
+
+void bubble_sort_paths(struct d_arr2d *a) {
+    //    printf("inside bubble sort\n");
+    //    printf("%d / %d\n",a->size, a->cap);
+    //    printf("sub0: %d / %d\n", a->data[0]->size, a->data[0]->cap);
+    //    for(int i=0;i<a->data[0]->size;i++){printf("%d ", a->data[0]->data[i]);}
+    //    if(a->size>=2) {
+    //        printf("\nsub1: %d / %d\n", a->data[1]->size, a->data[1]->cap);
+    //        for(int i=0;i<a->data[1]->size;i++){printf("%d ", a->data[1]->data[i]);}
+    //        printf("\n");
+    //    }
+    if (a->size <= 1)
+        return;
+    for (int k = a->size; k > 1; k--) {
+        for (int i = 0; i < k - 1; i++) {
+            bool correct_order = 1;
+            int *x = a->data[i]->data;
+            int x_len = a->data[i]->size;
+            int *y = a->data[i + 1]->data;
+            int y_len = a->data[i + 1]->size;
+            for (int j = 0; j < x_len && j < y_len; j++) {
+                if (x[j] > y[j]) {
+                    correct_order = 0;
+                    break;
+                } else if (x[j] < y[j]) {
+                    break;
+                }
+            }
+            // swap
+            if (!correct_order) {
+                struct d_arr *r = a->data[i];
+                a->data[i] = a->data[i + 1];
+                a->data[i + 1] = r;
             }
         }
-        //swap
-        if(!correct_order){
-            int* a_ = a[i];
-            a[i] = a[i+1];
-            a[i+1] = a_;
-            int l_ = l[i];
-            l[i] = l[i+1];
-            l[i+1] = l_;
-        }
     }
-    sort(a,l,n-1);
+    //    printf("calling rec\n");
 }
 
 void print_route(int *route, int route_length, Graph *graph) {
@@ -65,128 +161,80 @@ void print_path_block(int src, int dest, int *route, int route_length, Graph *gr
     print_distance(route, route_length, graph);
     mx_printstr("========================================\n");
 }
-static void resize_queue(int ***queue, int **queue_lengths, int *capacity, int rear) {
-    if (rear >= *capacity) {
-        *capacity *= 10;
-        *queue = (int **)realloc(*queue, (*capacity) * sizeof(int *));
-        *queue_lengths = (int *)realloc(*queue_lengths, (*capacity) * sizeof(int));
-        if (*queue == NULL || *queue_lengths == NULL) {
-            exit(1);
-        }
-    }
-}
-static void resize_valid_paths(int ***paths, int **lengths, int *capacity, int count) {
-    if (count >= *capacity) {
-        *capacity *= 10;
-        *paths = (int **)realloc(*paths, (*capacity) * sizeof(int *));
-        *lengths = (int *)realloc(*lengths, (*capacity) * sizeof(int));
-        if (*paths == NULL || *lengths == NULL) {
-            exit(1);
-        }
-    }
-}
-static int *dequeue_path(int **queue, int *queue_lengths, int *path_length, int *front) {
-    int *path = queue[*front];
-    *path_length = queue_lengths[*front];
+
+static struct d_arr *dequeue_path(struct d_arr2d *queue, int *front) {
+    //    printf("start\n");
+    struct d_arr *path = queue->data[*front];
     (*front)++;
+    //    printf("end\n");
     return path;
 }
 
-static void enqueue_path(int **queue, int *queue_lengths, int *path, int path_length, int *rear, int *capacity) {
-    resize_queue(&queue, &queue_lengths, capacity, *rear);
-    queue[*rear] = (int *)malloc(path_length * sizeof(int));
-    for (int i = 0; i < path_length; i++) {
-        queue[*rear][i] = path[i];
-    }
-    queue_lengths[*rear] = path_length;
-    (*rear)++;
-}
-
 void find_all_paths(int **prev, int dest, int src, Graph *graph) {
-    int capacity = 10000;
-    int **queue = (int **)malloc(capacity * sizeof(int *));
-    int *queue_lengths = (int *)malloc(capacity * sizeof(int));
+    struct d_arr2d *queue = new_d_arr2d(4);
+
     int front = 0, rear = 0;
-
-    int *initial_path = (int *)malloc(sizeof(int));
-    initial_path[0] = dest;
-    enqueue_path(queue, queue_lengths, initial_path, 1, &rear, &capacity);
-    free(initial_path);
-
+    {
+        struct d_arr *initial_path = new_d_arr(4);
+        add_el(initial_path, dest);
+        add_el2d(queue, initial_path);
+        rear++;
+    }
     // storing all valid paths
-    int all_valid_paths_capacity = 10000;
-    int **all_valid_paths = (int **)malloc(all_valid_paths_capacity * sizeof(int *));
-    int *all_valid_paths_lengths = (int *)malloc(all_valid_paths_capacity * sizeof(int));
-    int all_valid_paths_cnt = 0;
-
+    struct d_arr2d *paths_ok = new_d_arr2d(4);
     while (front < rear) {
-        int path_length;
-        int *path = dequeue_path(queue, queue_lengths, &path_length, &front);
-        int current_node = path[path_length - 1];
+        //        printf("check1\n");
+        struct d_arr *path = dequeue_path(queue, &front);
+        //        printf("check1.5\n");
+        int current_node = path->data[path->size - 1];
 
+        //        printf("check2\n");
         if (current_node == src) {
-            int *reversed_path = (int *)malloc(path_length * sizeof(int));
-            for (int i = 0; i < path_length; i++) {
-                reversed_path[i] = path[path_length - i - 1];
-            }
-
+            struct d_arr *reversed_path = new_d_arr(path->size);
+            for (int i = 0; i < path->size; i++)
+                add_el(reversed_path, path->data[path->size - i - 1]);
             // instead I want to save it to sort
-            {
-                resize_valid_paths(&all_valid_paths, &all_valid_paths_lengths, &all_valid_paths_capacity, all_valid_paths_cnt);
-                all_valid_paths[all_valid_paths_cnt] = reversed_path;
-                all_valid_paths_lengths[all_valid_paths_cnt] = path_length;
-                all_valid_paths_cnt++;
-//                print_path_block(reversed_path[0], reversed_path[path_length - 1], reversed_path, path_length, graph);
-            }
-
-//            free(reversed_path);
+            //            printf("reversed started\n");
+            add_el2d(paths_ok, reversed_path);
+            //            printf("reversed ended\n");
         } else {
+
             for (int i = 0; prev[current_node][i] != -1; i++) {
                 int predecessor = prev[current_node][i];
                 bool in_path = false;
-                for (int j = 0; j < path_length; j++) {
-                    if (path[j] == predecessor) {
+                for (int j = 0; j < path->size; j++) {
+                    if (path->data[j] == predecessor) {
                         in_path = true;
                         break;
                     }
                 }
                 if (!in_path) {
-                    int *new_path = (int *)malloc((path_length + 1) * sizeof(int));
-                    for (int j = 0; j < path_length; j++) {
-                        new_path[j] = path[j];
+                    struct d_arr *new_path = new_d_arr(path->size + 1);
+                    //                    int *new_path = (int *)malloc((path_length + 1) * sizeof(int));
+
+                    for (int j = 0; j < path->size; j++) {
+                        add_el(new_path, path->data[j]);
                     }
-                    new_path[path_length] = predecessor;
-                    enqueue_path(queue, queue_lengths, new_path, path_length + 1, &rear, &capacity);
-                    free(new_path);
+
+                    add_el(new_path, predecessor);
+                    add_el2d(queue, new_path);
+                    rear++;
                 }
             }
         }
-        free(path);
+        //        printf("check3\n");
     }
-
     // sort the paths
-    {
-        sort(all_valid_paths,all_valid_paths_lengths,all_valid_paths_cnt);
-    }
+    bubble_sort_paths(paths_ok);
+
     // supposed to output here
-    {
-        for(int i=0;i<all_valid_paths_cnt;i++){
-            print_path_block(all_valid_paths[i][0], all_valid_paths[i][all_valid_paths_lengths[i] - 1],
-                             all_valid_paths[i], all_valid_paths_lengths[i], graph);
-        }
+    for (int i = 0; i < paths_ok->size; i++) {
+        print_path_block(paths_ok->data[i]->data[0], paths_ok->data[i]->data[paths_ok->data[i]->size - 1],
+                         // paths_ok_sizes[i] - 1],
+                         paths_ok->data[i]->data, paths_ok->data[i]->size, graph);
     }
-
-    for(int i=0;i<all_valid_paths_cnt;i++){
-        free(all_valid_paths[i]);
-    }
-    free(all_valid_paths);
-    free(all_valid_paths_lengths);
-
-    for (int i = front; i < rear; i++) {
-        free(queue[i]);
-    }
-    free(queue);
-    free(queue_lengths);
+    custom_free2d(paths_ok);
+    custom_free2d(queue);
 }
 
 // Entry point to find paths for all pairs of nodes
